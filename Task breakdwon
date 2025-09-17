@@ -1,0 +1,79 @@
+# 🥚 Egg Timer Web App – Development Task Breakdown
+
+This document translates the feature specification into actionable development tasks. Each task should result in a functioning, testable system component.
+
+---
+
+## 1. Basic Countdown Timer
+
+- Implement a countdown timer that accepts a duration in minutes and seconds.
+- Display the remaining time in MM:SS format.
+- Add "Start", "Pause", "Resume", and "Reset" controls.
+- Ensure timer updates in real time.
+
+---
+
+## 2. Pre-set Timer Buttons
+
+- Add buttons for Soft-boiled (4 min), Medium-boiled (6 min), and Hard-boiled (10 min).
+- Clicking a button sets and starts the timer for the selected duration.
+
+---
+
+## 3. Audible Alarm
+
+- Play an audio alert when the timer reaches zero.
+- Add option to mute alarm in settings.
+- (Optional) Allow user to select between 2–3 alarm tones.
+
+---
+
+## 4. Visual Timer Display
+
+- Show a large digital timer (MM:SS).
+- (Optional) Add a circular or linear progress bar that visually represents remaining time.
+
+---
+
+## 5. Responsive Design
+
+- Make UI adapt to desktop, tablet, and mobile screens.
+- Ensure timer and controls remain visible and usable at all times.
+- Resize buttons and text appropriately for different devices.
+
+---
+
+## 6. Custom Timer Input
+
+- Allow users to manually enter minutes and seconds.
+- Validate input (no negatives, max 60 minutes).
+- Start timer with custom duration.
+
+---
+
+## 7. Keyboard Shortcuts
+
+- Implement keyboard controls:
+  - Spacebar: Start/Pause/Resume
+  - R key: Reset timer
+- Ensure shortcuts only work when app is focused.
+
+---
+
+## 8. Accessibility & Compatibility
+
+- Ensure timer is readable by screen readers.
+- Use high-contrast colors for readability.
+- Test and confirm compatibility with Chrome, Firefox, Safari, and Edge.
+
+---
+
+## 9. (Optional) Enhancements
+
+- Add dark mode toggle.
+- Save last used custom time in local storage.
+- Show notifications when timer ends, even if tab is in background.
+
+---
+
+**Tip:** Complete each task in order, testing after each step to ensure a functioning system.
