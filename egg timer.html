@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Egg Timer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    #progressBar {
+      transition: stroke-dashoffset 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    body {
+  font-family: sans-serif;
+  background: radial-gradient(ellipse at 50% 40%, #fffde4 70%, #fffbe6 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+  color: #d18a00;
+    }
+    .timer-container {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 300px;
+    }
+    .timer-display {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+  color: #a05a00;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .controls button {
+      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background: #ffe066;
+  color: #a05a00;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .controls button:disabled {
+      background: #eee;
+  color: #a05a00;
+  color: #a05a00;
+      cursor: not-allowed;
+    }
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    .input-group input {
+      width: 60px;
+      font-size: 1.2rem;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+  text-align: center;
+  color: #d18a00;
+    }
+    @media (max-width: 500px) {
+      .timer-container {
+        min-width: 90vw;
+        padding: 16px 8px;
+      }
+      .timer-display {
+        font-size: 2rem;
+      }
+    }
+    body.flash-bg {
+        animation: flash-bg 0.5s alternate 4;
+      }
+      @keyframes flash-bg {
+        0%   { background: #fffbe6; }
+        100% { background: #ffb950; }
+      }
+  </style>
+</head>
+<body>
+  <div class="timer-container">
+    <div class="input-group">
+      <label for="minutes">Min:</label>
+      <input type="number" id="minutes" min="0" max="60" value="0">
+      <label for="seconds">Sec:</label>
+      <input type="number" id="seconds" min="0" max="59" value="30">
+    </div>
+    <!-- Circular Progress Bar with Timer Inside -->
+    <div style="position: relative; width: 180px; height: 180px; margin-bottom: 24px;">
+      <svg id="progressCircle" width="180" height="180" style="display: block;">
+        <!-- Filled background circle -->
+        <circle
+          cx="90"
+          cy="90"
+          fill="#ffe066"
+          r="74"
+          stroke="none"
+        />
+        <!-- Outer stroke circle -->
+        <circle
+          cx="90"
+          cy="90"
+          r="80"
+          stroke="#ffe066"
+          stroke-width="12"
+          fill="none"
+        />
+        <!-- Progress bar -->
+        <circle
+          id="progressBar"
+          cx="90"
+          cy="90"
+          r="80"
+          stroke="#ff9800"
+          stroke-width="12"
+          fill="none"
+          stroke-linecap="round"
+          stroke-dasharray="502.654"
+          stroke-dashoffset="0"
+          transform="rotate(-90 90 90)"
+        />
+      </svg>
+      <div
+        id="timerDisplay"
+        class="timer-display"
+        style="
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          margin: 0;
+          font-size: 3rem;
+          font-weight: bold;
+          letter-spacing: 2px;
+          background: none;
+          width: 100%;
+          text-align: center;
+          pointer-events: none;
+        "
+      >00:30</div>
+    </div>
+    <div class="controls" style="margin-bottom: 12px;">
+      <button id="softBtn" title="Soft-boiled (4 min)">Soft-boiled</button>
+      <button id="mediumBtn" title="Medium-boiled (6 min)">Medium-boiled</button>
+      <button id="hardBtn" title="Hard-boiled (10 min)">Hard-boiled</button>
+    </div>
+    <div class="controls">
+      <button id="startBtn">Start</button>
+      <button id="pauseBtn" disabled>Pause</button>
+      <button id="resumeBtn" disabled>Resume</button>
+      <button id="resetBtn" disabled>Reset</button>
+    </div>
+  </div>
+  
+  <script>
+    // Timer state
+    let totalSeconds = 30;
+    let remainingSeconds = 30;
+    let timerInterval = null;
+    let isRunning = false;
+
+    const minutesInput = document.getElementById('minutes');
+    const secondsInput = document.getElementById('seconds');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // Update progress bar for new circle size
+    const progressBar = document.getElementById('progressBar');
+    const circleCircumference = 2 * Math.PI * 80; // r=80
+
+    function updateProgressBar() {
+      let percent = totalSeconds > 0 ? remainingSeconds / totalSeconds : 0;
+      let offset = circleCircumference * (1 - percent);
+      progressBar.style.strokeDasharray = circleCircumference;
+      progressBar.style.strokeDashoffset = offset;
+    }
+
+    function updateDisplay() {
+      timerDisplay.textContent = formatTime(remainingSeconds);
+      updateProgressBar();
+    }
+
+    function setInputsEnabled(enabled) {
+      minutesInput.disabled = !enabled;
+      secondsInput.disabled = !enabled;
+    }
+
+    function animateTimerEnd() {
+        document.body.classList.add('flash-bg');
+        setTimeout(() => {
+         document.body.classList.remove('flash-bg');
+        }, 2000); // 4 flashes at 0.5s each
+    }
+
+    function startTimer() {
+      if (isRunning) return;
+      totalSeconds = parseInt(minutesInput.value, 10) * 60 + parseInt(secondsInput.value, 10);
+      if (isNaN(totalSeconds) || totalSeconds <= 0 || totalSeconds > 3600) {
+        alert('Please enter a valid time (1–3600 seconds).');
+        return;
+      }
+      remainingSeconds = totalSeconds;
+      updateDisplay();
+      setInputsEnabled(false);
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      resumeBtn.disabled = true;
+      resetBtn.disabled = false;
+      isRunning = true;
+      timerInterval = setInterval(() => {
+        if (remainingSeconds > 0) {
+          remainingSeconds--;
+          updateDisplay();
+        } else {
+          clearInterval(timerInterval);
+          isRunning = false;
+          pauseBtn.disabled = true;
+          resumeBtn.disabled = true;
+          startBtn.disabled = false;
+          setInputsEnabled(true);
+          animateTimerEnd(); // Animation on timer end
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      if (!isRunning) return;
+      clearInterval(timerInterval);
+      isRunning = false;
+      pauseBtn.disabled = true;
+      resumeBtn.disabled = false;
+    }
+
+    function resumeTimer() {
+      if (isRunning || remainingSeconds <= 0) return;
+      isRunning = true;
+      pauseBtn.disabled = false;
+      resumeBtn.disabled = true;
+      timerInterval = setInterval(() => {
+        if (remainingSeconds > 0) {
+          remainingSeconds--;
+          updateDisplay();
+        } else {
+          clearInterval(timerInterval);
+          isRunning = false;
+          pauseBtn.disabled = true;
+          resumeBtn.disabled = true;
+          startBtn.disabled = false;
+          setInputsEnabled(true);
+          animateTimerEnd(); // Animation on timer end
+        }
+      }, 1000);
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      remainingSeconds = totalSeconds;
+      updateDisplay();
+      setInputsEnabled(true);
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      resumeBtn.disabled = true;
+      resetBtn.disabled = true;
+      updateProgressBar();
+    }
+
+    startBtn.addEventListener('click', startTimer);
+    pauseBtn.addEventListener('click', pauseTimer);
+    resumeBtn.addEventListener('click', resumeTimer);
+    resetBtn.addEventListener('click', resetTimer);
+
+    minutesInput.addEventListener('change', () => {
+      let min = parseInt(minutesInput.value, 10);
+      if (isNaN(min) || min < 0) min = 0;
+      if (min > 60) min = 60;
+      minutesInput.value = min;
+      updateInitialDisplay();
+    });
+
+    secondsInput.addEventListener('change', () => {
+      let sec = parseInt(secondsInput.value, 10);
+      if (isNaN(sec) || sec < 0) sec = 0;
+      if (sec > 59) sec = 59;
+      secondsInput.value = sec;
+      updateInitialDisplay();
+    });
+
+    function updateInitialDisplay() {
+      const min = parseInt(minutesInput.value, 10) || 0;
+      const sec = parseInt(secondsInput.value, 10) || 0;
+      timerDisplay.textContent = formatTime(min * 60 + sec);
+      totalSeconds = min * 60 + sec;
+      remainingSeconds = totalSeconds;
+      updateProgressBar();
+    }
+
+    // Pre-set timer button logic
+    document.getElementById('softBtn').addEventListener('click', () => {
+      minutesInput.value = 4;
+      secondsInput.value = 0;
+      updateInitialDisplay();
+      resetTimer();
+      startTimer();
+    });
+
+    document.getElementById('mediumBtn').addEventListener('click', () => {
+      minutesInput.value = 6;
+      secondsInput.value = 0;
+      updateInitialDisplay();
+      resetTimer();
+      startTimer();
+    });
+
+    document.getElementById('hardBtn').addEventListener('click', () => {
+      minutesInput.value = 10;
+      secondsInput.value = 0;
+      updateInitialDisplay();
+      resetTimer();
+      startTimer();
+    });
+
+    // Initialize display
+    updateInitialDisplay();
+  </script>
+</body>
+</html>
